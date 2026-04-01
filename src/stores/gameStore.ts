@@ -7,11 +7,30 @@ import {
 
 type Listener = () => void;
 
-let state: GameSaveState = createInitialState();
+const SAVE_KEY = 'pokemon-yellow-save';
+
+function loadState(): GameSaveState {
+  if (typeof window === 'undefined') return createInitialState();
+  try {
+    const saved = localStorage.getItem(SAVE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch { /* corrupted save, start fresh */ }
+  return createInitialState();
+}
+
+function persistState(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  } catch { /* storage full, ignore */ }
+}
+
+let state: GameSaveState = loadState();
 const listeners = new Set<Listener>();
 
 function notify(): void {
   listeners.forEach((l) => l());
+  persistState();
 }
 
 export const gameStore = {
